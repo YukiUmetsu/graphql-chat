@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import { useQuery, useMutation, useSubscription } from '@apollo/react-hooks';
 import { messagesQuery, addMessageMutation, messageAddedSubscription } from './graphql/queries';
 import MessageInput from './MessageInput';
@@ -6,16 +6,15 @@ import MessageList from './MessageList';
 import Loader from "react-loader-spinner";
 
 const Chat = ({user}) => {
-  const [messages, setMessages] = useState([]);
-  // get messages on load
-  const {loading, error} = useQuery(messagesQuery, {
-    onCompleted: (data) => setMessages(data.messages)
-  });
+  // get messages on load from server or cache
+  const {loading, error, data} = useQuery(messagesQuery);
+  const messages = data ? data.messages : [];
   
   // get on going messages after first load
   useSubscription(messageAddedSubscription, {
-    onSubscriptionData: ({subscriptionData}) => {
-      setMessages(messages.concat(subscriptionData.data.messageAdded));
+    onSubscriptionData: ({client, subscriptionData}) => {
+      // write to apollo cache local state management
+      client.writeData({data: {messages: messages.concat(subscriptionData.data.messageAdded)}});
     }
   });
 
