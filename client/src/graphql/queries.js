@@ -33,3 +33,18 @@ export async function getMessages() {
   const {data} = await client.query({query: messagesQuery});
   return data.messages;
 }
+
+const messageAddedSubscription = gql`
+  subscription {
+    messageAdded {
+      id
+      from
+      text
+    }
+  }
+`;
+
+export function onMessageAdded(handleMessage) {
+  const observable = client.subscribe({query: messageAddedSubscription});
+  return observable.subscribe(({data}) => handleMessage(data.messageAdded));
+}
